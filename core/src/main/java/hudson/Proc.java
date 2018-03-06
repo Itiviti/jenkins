@@ -64,7 +64,10 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
 public abstract class Proc {
     protected Proc() {}
 
-    protected boolean killWhenInterrupted = true;
+    /**
+     * Indicates that the process should not be killed on interruption.
+     */
+    protected boolean dontKillWhenInterrupted;
 
     /**
      * Checks if the process is still alive.
@@ -216,10 +219,10 @@ public abstract class Proc {
          * @param err
          *      null to redirect stderr to stdout.
          */
-        public LocalProc(String[] cmd,String[] env,InputStream in,OutputStream out,OutputStream err,File workDir, boolean killWhenInterrupted) throws IOException {
+        public LocalProc(String[] cmd,String[] env,InputStream in,OutputStream out,OutputStream err,File workDir, boolean dontKillWhenInterrupted) throws IOException {
             this( calcName(cmd),
                   stderr(environment(new ProcessBuilder(cmd),env).directory(workDir), err==null || err== SELFPUMP_OUTPUT),
-                  in, out, err, killWhenInterrupted);
+                  in, out, err, dontKillWhenInterrupted);
         }
 
         private static ProcessBuilder stderr(ProcessBuilder pb, boolean redirectError) {
@@ -239,11 +242,11 @@ public abstract class Proc {
             return pb;
         }
 
-        private LocalProc( String name, ProcessBuilder procBuilder, InputStream in, OutputStream out, OutputStream err, boolean killWhenInterrupted ) throws IOException {
+        private LocalProc( String name, ProcessBuilder procBuilder, InputStream in, OutputStream out, OutputStream err, boolean dontKillWhenInterrupted ) throws IOException {
             Logger.getLogger(Proc.class.getName()).log(Level.FINE, "Running: {0}", name);
             this.name = name;
             this.out = out;
-            this.killWhenInterrupted = killWhenInterrupted;
+            this.dontKillWhenInterrupted = dontKillWhenInterrupted;
             this.cookie = EnvVars.createCookie();
             procBuilder.environment().putAll(cookie);
             if (procBuilder.directory() != null && !procBuilder.directory().exists()) {
@@ -357,7 +360,7 @@ public abstract class Proc {
                 return r;
             } catch (InterruptedException e) {
                 // aborting. kill the process
-                if (killWhenInterrupted) {
+                if (!dontKillWhenInterrupted) {
                     destroy();
                 }
                 throw e;
@@ -467,7 +470,7 @@ public abstract class Proc {
                 return process.get();
             } catch (InterruptedException e) {
                 LOGGER.log(Level.FINE, String.format("Join operation has been interrupted for the process %s. Killing the process", this), e);
-                if (killWhenInterrupted) {
+                if (!dontKillWhenInterrupted) {
                     kill();
                 }
                 throw e;

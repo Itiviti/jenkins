@@ -181,7 +181,7 @@ public abstract class Launcher {
          */
         protected boolean reverseStdin, reverseStdout, reverseStderr;
 
-        protected boolean killWhenInterrupted;
+        protected boolean dontKillWhenInterrupted;
 
         /**
          * Passes a white-space separated single-string command (like "cat abc def") and parse them
@@ -443,9 +443,8 @@ public abstract class Launcher {
             return this;
         }
 
-
-        public ProcStarter killWhenInterrupted(boolean value) {
-            this.killWhenInterrupted = value;
+        public ProcStarter dontKillWhenInterrupted() {
+            this.dontKillWhenInterrupted = true;
             return this;
         }
 
@@ -933,7 +932,7 @@ public abstract class Launcher {
                     ps.reverseStdin ?LocalProc.SELFPUMP_INPUT:ps.stdin,
                     ps.reverseStdout?LocalProc.SELFPUMP_OUTPUT:ps.stdout,
                     ps.reverseStderr?LocalProc.SELFPUMP_OUTPUT:ps.stderr,
-                    toFile(ps.pwd), ps.killWhenInterrupted);
+                    toFile(ps.pwd), ps.dontKillWhenInterrupted);
         }
 
         private File toFile(FilePath f) {
@@ -1056,7 +1055,8 @@ public abstract class Launcher {
             final String workDir = psPwd==null ? null : psPwd.getRemote();
 
             try {
-                return new ProcImpl(getChannel().call(new RemoteLaunchCallable(ps.commands, ps.masks, ps.envs, in, ps.reverseStdin, out, ps.reverseStdout, err, ps.reverseStderr, ps.quiet, workDir, listener, ps.killWhenInterrupted)));
+                return new ProcImpl(getChannel().call(new RemoteLaunchCallable(ps.commands, ps.masks, ps.envs, in, ps.reverseStdin,
+                        out, ps.reverseStdout, err, ps.reverseStderr, ps.quiet, workDir, listener, ps.dontKillWhenInterrupted)));
             } catch (InterruptedException e) {
                 throw (IOException)new InterruptedIOException().initCause(e);
             }
@@ -1274,14 +1274,14 @@ public abstract class Launcher {
         private final @Nonnull TaskListener listener;
         private final boolean reverseStdin, reverseStdout, reverseStderr;
         private final boolean quiet;
-        private final boolean killWhenInterrupted;
+        private final boolean dontKillWhenInterrupted;
 
         RemoteLaunchCallable(@Nonnull List<String> cmd, @CheckForNull boolean[] masks, @CheckForNull String[] env,
                 @CheckForNull InputStream in, boolean reverseStdin,
                 @CheckForNull OutputStream out, boolean reverseStdout,
                 @CheckForNull OutputStream err, boolean reverseStderr,
                 boolean quiet, @CheckForNull String workDir,
-                @Nonnull TaskListener listener, boolean killWhenInterrupted) {
+                @Nonnull TaskListener listener, boolean dontKillWhenInterrupted) {
             this.cmd = new ArrayList<>(cmd);
             this.masks = masks;
             this.env = env;
@@ -1294,17 +1294,18 @@ public abstract class Launcher {
             this.reverseStdout = reverseStdout;
             this.reverseStderr = reverseStderr;
             this.quiet = quiet;
-            this.killWhenInterrupted = killWhenInterrupted;
+            this.dontKillWhenInterrupted = dontKillWhenInterrupted;
         }
 
         public RemoteProcess call() throws IOException {
             final Channel channel = getOpenChannelOrFail();
             Launcher.ProcStarter ps = new LocalLauncher(listener).launch();
-            ps.cmds(cmd).masks(masks).envs(env).stdin(in).stdout(out).stderr(err).quiet(quiet).killWhenInterrupted(killWhenInterrupted);
+            ps.cmds(cmd).masks(masks).envs(env).stdin(in).stdout(out).stderr(err).quiet(quiet);
             if(workDir!=null)   ps.pwd(workDir);
             if (reverseStdin)   ps.writeStdin();
             if (reverseStdout)  ps.readStdout();
             if (reverseStderr)  ps.readStderr();
+            if (dontKillWhenInterrupted) ps.dontKillWhenInterrupted();
 
             final Proc p = ps.start();
 
