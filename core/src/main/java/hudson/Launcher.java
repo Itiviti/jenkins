@@ -184,6 +184,10 @@ public abstract class Launcher {
          */
         protected boolean reverseStdin, reverseStdout, reverseStderr;
 
+        /**
+         * True to prevent killing the launched process when it is interrupted
+         * @since TODO
+         */
         protected boolean dontKillWhenInterrupted;
 
         /**
@@ -449,6 +453,18 @@ public abstract class Launcher {
             return this;
         }
 
+        /**
+         * Indicates that the launched process should not be killed when interrupted.
+         * It allows detecting the interruption on caller's side and do custom (cleanup) action while
+         * the launched process is still running.
+         *
+         * <p>
+         * Note that the process can (and should) be killed
+         * via {@link Proc#kill()} when custom action is done.
+         *
+         * @return {@code this}
+         * @since TODO
+         */
         public ProcStarter dontKillWhenInterrupted() {
             this.dontKillWhenInterrupted = true;
             return this;

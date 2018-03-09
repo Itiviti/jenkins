@@ -67,6 +67,7 @@ public abstract class Proc {
 
     /**
      * Indicates that the process should not be killed on interruption.
+     * @since TODO
      */
     protected boolean dontKillWhenInterrupted;
 
