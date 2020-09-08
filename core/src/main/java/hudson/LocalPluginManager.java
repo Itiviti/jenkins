@@ -24,11 +24,11 @@
 
 package hudson;
 
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.util.SystemProperties;
 import jenkins.model.Jenkins;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import javax.servlet.ServletContext;
 import java.io.File;
 import java.util.Collection;
