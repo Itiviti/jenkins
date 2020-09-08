@@ -34,7 +34,7 @@ import hudson.slaves.OfflineCause;
 import jenkins.util.SystemProperties;
 import jenkins.util.Timer;
 
-import javax.annotation.concurrent.GuardedBy;
+import net.jcip.annotations.GuardedBy;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
@@ -195,7 +195,7 @@ public abstract class AbstractNodeMonitorDescriptor<T> extends Descriptor<NodeMo
             return Messages.AbstractNodeMonitorDescriptor_NoDataYet();
 //        return Messages.AbstractNodeMonitorDescriptor_DataObtainedSometimeAgo(
 //                Util.getTimeSpanString(System.currentTimeMillis()-record.timestamp));
-        return Util.getPastTimeString(System.currentTimeMillis()-record.timestamp);
+        return Util.getTimeSpanString(System.currentTimeMillis()-record.timestamp);
     }
 
     /**

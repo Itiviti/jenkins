@@ -307,9 +307,12 @@ public class XStreamDOM {
                     if (node.children.get(i).tagName.equals(child.tagName))
                         count++;
                 boolean more = false;
-                for (int i=pos; !more && i<node.children.size(); i++)
-                    if (node.children.get(i).tagName.equals(child.tagName))
+                for (int i = pos; i < node.children.size(); i++) {
+                    if (node.children.get(i).tagName.equals(child.tagName)) {
                         more = true;
+                        break;
+                    }
+                }
 
                 if (count==0 && !more)  return child.tagName;   // sole child
                 return child.tagName+'['+count+']';
@@ -403,7 +406,7 @@ public class XStreamDOM {
         private static class Pending {
             final String tagName;
             List<XStreamDOM> children;
-            List<String> attributes = new ArrayList<String>();
+            List<String> attributes = new ArrayList<>();
             String value;
 
             private Pending(String tagName) {
@@ -412,7 +415,7 @@ public class XStreamDOM {
 
             void addChild(XStreamDOM dom) {
                 if (children==null)
-                    children = new ArrayList<XStreamDOM>();
+                    children = new ArrayList<>();
                 children.add(dom);
             }
 
@@ -421,7 +424,7 @@ public class XStreamDOM {
             }
         }
 
-        private final Stack<Pending> pendings = new Stack<Pending>();
+        private final Stack<Pending> pendings = new Stack<>();
 
         public WriterImpl() {
             pendings.push(new Pending(null));   // to get the final result
@@ -522,7 +525,7 @@ public class XStreamDOM {
             List<XStreamDOM> children = null;
             String value = null;
             if (r.hasMoreChildren()) {
-                children = new ArrayList<XStreamDOM>();
+                children = new ArrayList<>();
                 while (r.hasMoreChildren()) {
                     children.add(unmarshal(r, context));
                 }

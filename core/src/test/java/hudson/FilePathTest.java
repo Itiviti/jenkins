@@ -28,6 +28,7 @@ import hudson.model.TaskListener;
 import hudson.os.PosixAPI;
 import hudson.os.WindowsUtil;
 import hudson.remoting.VirtualChannel;
+import hudson.slaves.WorkspaceList;
 import hudson.util.NullStream;
 import hudson.util.StreamTaskListener;
 import org.apache.commons.io.FileUtils;
@@ -54,7 +55,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.*;
@@ -132,7 +139,7 @@ public class FilePathTest {
     }
     
     private List<Future<Integer>> whenFileIsCopied100TimesConcurrently(final File file) throws InterruptedException {
-        List<Callable<Integer>> r = new ArrayList<Callable<Integer>>();
+        List<Callable<Integer>> r = new ArrayList<>();
         for (int i=0; i<100; i++) {
             r.add(new Callable<Integer>() {
                 public Integer call() throws Exception {
@@ -208,13 +215,10 @@ public class FilePathTest {
             for (int i = 0; i < 10000; i++) {
                 // TODO is there a simpler way to force the TarOutputStream to be flushed and the reader to start?
                 // Have not found a way to make the failure guaranteed.
-                OutputStream os = from.child("content" + i).write();
-                try {
+                try (OutputStream os = from.child("content" + i).write()) {
                     for (int j = 0; j < 1024; j++) {
                         os.write('.');
                     }
-                } finally {
-                    os.close();
                 }
             }
             FilePath toF = to.child("content0");
@@ -296,7 +300,7 @@ public class FilePathTest {
     }
 
     @Issue("JENKINS-6494")
-    @Test public void getParent() throws Exception {
+    @Test public void getParent() {
         FilePath fp = new FilePath((VirtualChannel)null, "/abc/def");
         assertEquals("/abc", (fp = fp.getParent()).getRemote());
         assertEquals("/", (fp = fp.getParent()).getRemote());
@@ -371,36 +375,36 @@ public class FilePathTest {
 
     @Test public void list() throws Exception {
         File baseDir = temp.getRoot();
-            final Set<FilePath> expected = new HashSet<FilePath>();
+            final Set<FilePath> expected = new HashSet<>();
             expected.add(createFilePath(baseDir, "top", "sub", "app.log"));
             expected.add(createFilePath(baseDir, "top", "sub", "trace.log"));
             expected.add(createFilePath(baseDir, "top", "db", "db.log"));
             expected.add(createFilePath(baseDir, "top", "db", "trace.log"));
             final FilePath[] result = new FilePath(baseDir).list("**");
-            assertEquals(expected, new HashSet<FilePath>(Arrays.asList(result)));
+            assertEquals(expected, new HashSet<>(Arrays.asList(result)));
     }
 
     @Test public void listWithExcludes() throws Exception {
         File baseDir = temp.getRoot();
-            final Set<FilePath> expected = new HashSet<FilePath>();
+            final Set<FilePath> expected = new HashSet<>();
             expected.add(createFilePath(baseDir, "top", "sub", "app.log"));
             createFilePath(baseDir, "top", "sub", "trace.log");
             expected.add(createFilePath(baseDir, "top", "db", "db.log"));
             createFilePath(baseDir, "top", "db", "trace.log");
             final FilePath[] result = new FilePath(baseDir).list("**", "**/trace.log");
-            assertEquals(expected, new HashSet<FilePath>(Arrays.asList(result)));
+            assertEquals(expected, new HashSet<>(Arrays.asList(result)));
     }
 
     @Test public void listWithDefaultExcludes() throws Exception {
         File baseDir = temp.getRoot();
-            final Set<FilePath> expected = new HashSet<FilePath>();
+            final Set<FilePath> expected = new HashSet<>();
             expected.add(createFilePath(baseDir, "top", "sub", "backup~"));
             expected.add(createFilePath(baseDir, "top", "CVS", "somefile,v"));
             expected.add(createFilePath(baseDir, "top", ".git", "config"));
             // none of the files are included by default (default includes true)
             assertEquals(0, new FilePath(baseDir).list("**", "").length);
             final FilePath[] result = new FilePath(baseDir).list("**", "", false);
-            assertEquals(expected, new HashSet<FilePath>(Arrays.asList(result)));
+            assertEquals(expected, new HashSet<>(Arrays.asList(result)));
     }
 
     @Issue("JENKINS-11073")
@@ -494,7 +498,7 @@ public class FilePathTest {
     }
 
     @Issue("JENKINS-13649")
-    @Test public void multiSegmentRelativePaths() throws Exception {
+    @Test public void multiSegmentRelativePaths() {
         VirtualChannel d = Mockito.mock(VirtualChannel.class);
         FilePath winPath = new FilePath(d, "c:\\app\\jenkins\\workspace");
         FilePath nixPath = new FilePath(d, "/opt/jenkins/workspace");
@@ -540,8 +544,8 @@ public class FilePathTest {
                 d3.mkdirs();
                 d3.child("f.txt").touch(0);
             }
-            assertEquals(null, d.validateAntFileMask("d1/d2/**/f.txt"));
-            assertEquals(null, d.validateAntFileMask("d1/d2/**/f.txt", 10));
+            assertNull(d.validateAntFileMask("d1/d2/**/f.txt"));
+            assertNull(d.validateAntFileMask("d1/d2/**/f.txt", 10));
             assertEquals(Messages.FilePath_validateAntFileMask_portionMatchButPreviousNotMatchAndSuggest("**/*.js", "**", "**/*.js"), d.validateAntFileMask("**/*.js", 1000));
             try {
                 d.validateAntFileMask("**/*.js", 10);
@@ -560,11 +564,11 @@ public class FilePathTest {
             d.child("d1/d2/d3/f.txt").touch(0);
             d.child("d1/d2/d3/f.html").touch(0);
             d.child("d1/d2/f.txt").touch(0);
-            
-            assertEquals(null, d.validateAntFileMask("**/d1/**/f.*", FilePath.VALIDATE_ANT_FILE_MASK_BOUND, true));
-            assertEquals(null, d.validateAntFileMask("**/d1/**/f.*", FilePath.VALIDATE_ANT_FILE_MASK_BOUND, false));
+
+            assertNull(d.validateAntFileMask("**/d1/**/f.*", FilePath.VALIDATE_ANT_FILE_MASK_BOUND, true));
+            assertNull(d.validateAntFileMask("**/d1/**/f.*", FilePath.VALIDATE_ANT_FILE_MASK_BOUND, false));
             assertEquals(Messages.FilePath_validateAntFileMask_matchWithCaseInsensitive("**/D1/**/F.*"), d.validateAntFileMask("**/D1/**/F.*", FilePath.VALIDATE_ANT_FILE_MASK_BOUND, true));
-            assertEquals(null, d.validateAntFileMask("**/D1/**/F.*", FilePath.VALIDATE_ANT_FILE_MASK_BOUND, false));
+            assertNull(d.validateAntFileMask("**/D1/**/F.*", FilePath.VALIDATE_ANT_FILE_MASK_BOUND, false));
         } finally {
             Util.deleteRecursive(tmp);
         }
@@ -664,9 +668,8 @@ public class FilePathTest {
         when(con2.getResponseCode()).thenReturn(HttpURLConnection.HTTP_OK);
         when(con2.getInputStream()).thenReturn(someZippedContent());
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         String message = "going ahead";
-        assertTrue(d.installIfNecessaryFrom(url, new StreamTaskListener(baos), message));
+        assertTrue(d.installIfNecessaryFrom(url, null, message));
     }
 
     private URL someUrlToZipFile(final URLConnection con) throws IOException {
@@ -806,6 +809,20 @@ public class FilePathTest {
         assertTrue("symlink target should not be deleted", Files.exists(targetDir));
         assertTrue("symlink target contents should not be deleted", Files.exists(targetContents));
         assertFalse("could not delete target", Files.exists(toDelete));
+    }
+
+    @Test
+    @Issue("JENKINS-44909")
+    public void deleteSuffixesRecursive() throws Exception {
+        File deleteSuffixesRecursiveFolder = temp.newFolder("deleteSuffixesRecursive");
+        FilePath filePath = new FilePath(deleteSuffixesRecursiveFolder);
+        FilePath suffix = filePath.withSuffix(WorkspaceList.COMBINATOR + "suffixed");
+        FilePath textTempFile = suffix.createTextTempFile("tmp", null, "dummy", true);
+
+        assertThat(textTempFile.exists(), is(true));
+        
+        filePath.deleteSuffixesRecursive();
+        assertThat(textTempFile.exists(), is(false));
     }
 
     @Test public void deleteRecursiveOnWindows() throws Exception {

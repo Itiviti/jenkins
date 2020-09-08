@@ -34,7 +34,7 @@ import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
 
-import javax.annotation.CheckForNull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.util.Locale;
@@ -79,7 +79,7 @@ public class StaplerDispatchValidatorTest {
         String[] urls = {"annotated/root", "groovy/root", "jelly/root", "whitelist/root"};
         for (String url : urls) {
             HtmlPage root = j.createWebClient().goTo(url);
-            assertEquals("Fragment", root.getElementById("frag").asText());
+            assertEquals("Fragment", root.getElementById("frag").getChildNodes().get(0).getNodeValue());
         }
     }
 

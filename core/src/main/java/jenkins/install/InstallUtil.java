@@ -28,6 +28,7 @@ import static java.util.logging.Level.WARNING;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,8 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import javax.inject.Provider;
 
 import org.apache.commons.io.FileUtils;
@@ -220,11 +221,11 @@ public class InstallUtil {
      * @return The last saved Jenkins instance version.
      * @see #saveLastExecVersion()
      */
-    public static @Nonnull String getLastExecVersion() {
+    public static @NonNull String getLastExecVersion() {
         File lastExecVersionFile = getLastExecVersionFile();
         if (lastExecVersionFile.exists()) {
             try {
-                String version = FileUtils.readFileToString(lastExecVersionFile);
+                String version = FileUtils.readFileToString(lastExecVersionFile, Charset.defaultCharset());
                 // JENKINS-37438 blank will force the setup
                 // wizard regardless of current state of the system
                 if (StringUtils.isBlank(version)) {
@@ -264,10 +265,10 @@ public class InstallUtil {
      * Save a specific version as the last execute version.
      * @param version The version to save.
      */
-    static void saveLastExecVersion(@Nonnull String version) {
+    static void saveLastExecVersion(@NonNull String version) {
         File lastExecVersionFile = getLastExecVersionFile();
         try {
-            FileUtils.write(lastExecVersionFile, version);
+            FileUtils.write(lastExecVersionFile, version, Charset.defaultCharset());
         } catch (IOException e) {
             LOGGER.log(SEVERE, "Failed to save " + lastExecVersionFile.getAbsolutePath(), e);
         }

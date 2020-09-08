@@ -37,7 +37,6 @@ import org.kohsuke.stapler.StaplerResponse;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -236,6 +235,7 @@ public abstract class ItemGroupMixIn {
         }
         src.getDescriptor().checkApplicableIn(parent);
         acl.getACL().checkCreatePermission(parent, src.getDescriptor());
+        Jenkins.checkGoodName(name);
         ItemListener.checkBeforeCopy(src, parent);
 
         T result = (T)createProject(src.getDescriptor(),name,false);
@@ -265,6 +265,7 @@ public abstract class ItemGroupMixIn {
 
         Jenkins.get().getProjectNamingStrategy().checkName(name);
         Items.verifyItemDoesNotAlreadyExist(parent, name, null);
+        Jenkins.checkGoodName(name);
 
         // place it as config.xml
         File configXml = Items.getConfigFile(getRootDirFor(name)).getFile();
@@ -312,6 +313,7 @@ public abstract class ItemGroupMixIn {
 
         Jenkins.get().getProjectNamingStrategy().checkName(name);
         Items.verifyItemDoesNotAlreadyExist(parent, name, null);
+        Jenkins.checkGoodName(name);
 
         TopLevelItem item = type.newInstance(parent, name);
         item.onCreatedFromScratch();
